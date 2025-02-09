@@ -1,5 +1,7 @@
-from flask import Blueprint, request, render_template
+from flask import Blueprint, request, render_template, url_for, flash
 from flask import redirect
+from models.model import db, User
+from werkzeug.security import generate_password_hash
 
 auth_views = Blueprint("auth", __name__)
 
@@ -7,18 +9,22 @@ auth_views = Blueprint("auth", __name__)
 def register():
     # Define application logic for homepage
     if request.method == "POST":
-        uploaded_file = request.files['picture']
-        username = request.form.get("username")
         email = request.form.get("email")
         password = request.form.get("password")
 
-        # Save the uploaded file to a directory on your server
-        # Preferably outside the application root or as you desire
-        uploaded_file.save(f"/tmp/{uploaded_file.filename}")
+        hashed_password = generate_password_hash(password)
 
-        # Implement database logic to register user
+        # simpan kedatabase
+        new_user = User(email=email, password=hashed_password)
+        try: 
+            db.session.add(new_user)
+            db.session.commit()
+            flash('akun berhasil didaftarkan', 'success')
+        except:
+            db.session.rollback()
+            flash('akun gagal didaftarkan periksa inputan', 'danger')
 
-        return render_template("login.html")
+        return redirect(url_for('main.index'))
 
     # Render template for GET requests
     return render_template("register.html")
